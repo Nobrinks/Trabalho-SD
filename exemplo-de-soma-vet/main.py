@@ -27,7 +27,7 @@ def join_soma(args):
   new_vet = []
   for partial in args:
     new_vet += partial
-  #print(new_vet)
+  # print(new_vet)
 
 def split(vector, num_parts):
   quotient, rest = divmod(len(vector), num_parts)

@@ -17,7 +17,7 @@ class Iter_Queue():
         self.q = Queue()
 
     def put(self, x):
-        print("Iter Queue Enqueueing {} -- {}".format(x, self))
+        # print("Iter Queue Enqueueing {} -- {}".format(x, self))
         self.q.put(x)
 
     def __iter__(self):
@@ -31,7 +31,7 @@ class Iter_Queue():
 
 class SourceWS(Source):
     def f(self, line, args):
-        print("[{}][SourceWS] Receiving request {} {}".format(datetime.now(),line, args))
+        # print("[{}][SourceWS] Receiving request {} {}".format(datetime.now(),line, args))
 
         return line
     
@@ -48,14 +48,14 @@ class ThreadedDict(dict):
 
     def lock(self):
         self.__lock__.acquire()
-        print("Got lock")
+        # print("Got lock")
     def unlock(self):
         self.__lock__.release()
 
     def signalAll(self):
         self.__cond__.notify_all()
         self.__lock__.release()
-        print("Release lock in signalAll")
+        # print("Release lock in signalAll")
     def wait(self):
         self.__cond__.wait()
 
@@ -65,8 +65,8 @@ class WebService(Process):
 
 
         server = ThreadedXMLRPCServer(server)
-        print("Listening on port 8000.")
-        #server.register_function(lambda args: print("Args {}".format(args)), 'service')
+        # print("Listening on port 8000.")
+        #server.register_function(lambda args: # print("Args {}".format(args)), 'service')
         self.req_queue = Iter_Queue()
         self.server = server
         self.d = ThreadedDict()
@@ -75,10 +75,10 @@ class WebService(Process):
         d = self.d
         while True:
             x, val = self.resp_conn.recv()
-            print("Got a response {}".format((x, val)))
+            # print("Got a response {}".format((x, val)))
             d.lock()
             d[x] = val
-            print("Got the lock to insert {}".format((d,x,val)))
+            # print("Got the lock to insert {}".format((d,x,val)))
             d.signalAll()
 
 
@@ -88,17 +88,17 @@ class WebService(Process):
         resp = None
         x = x - 2
         d.lock()
-        print("Got lock {}".format(x))
+        # print("Got lock {}".format(x))
         while resp == None:
-            print("resp is None {}".format(d))
+            # print("resp is None {}".format(d))
             if x in d:
-                print("Getting {}".format(x))
+                # print("Getting {}".format(x))
                 resp = d.pop(x)
                 d.unlock()
             else:
-                print("Waiting for {}".format(x))
+                # print("Waiting for {}".format(x))
                 d.wait()  #wait() releases and acquires the lock after the condition is notified
-        print("Responding {}".format(resp)) 
+        # print("Responding {}".format(resp)) 
         return resp
 
     def service(self, args):
@@ -112,7 +112,7 @@ class WebService(Process):
 
 
     def run(self):
-        print("WebService Running")
+        # print("WebService Running")
         threading.Thread(target = self.resp_loop).start()
         server = self.server
         server.register_function(self.service)
@@ -127,7 +127,7 @@ class NodeWS(Node):
         Node.__init__(self, None, number_of_input_ports)
         self.resp_conn = resp_conn
     def run(self, args, workerid, operq):
-        print("Args {}".format(args[0].val))
+        # print("Args {}".format(args[0].val))
         self.resp_conn.send((args[0].val.tag, args[0].val.value))
       
       #  opers = self.create_oper(None, workerid, operq) #necessary to make worker request more tasks

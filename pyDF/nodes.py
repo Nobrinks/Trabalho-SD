@@ -41,7 +41,7 @@ class Source(Node): #source class
             tag = self.tagcounter
             
             result = self.f(line, args)
-            print("Creating oper {}".format(result))
+            # print("Creating oper {}".format(result))
             opers = self.create_oper(TaggedValue(result, tag), workerid, operq)
             for oper in opers:
                 oper.request_task = False
@@ -76,16 +76,16 @@ class FilterTagged(Node): #produce operands in the form of TaggedValue, with the
         #self.arg_buffer = [[] for i in range(inputn)]
         self.inputn = inputn
         self.f = f
-        #print("Selfdst {}".format(self.dsts))
+        # print("Selfdst {}".format(self.dsts))
 
     def insert_op(self, dstport, oper):
-        #print("opertype {}".format(oper.val))
+        # print("opertype {}".format(oper.val))
         tag = oper.val.tag
         value = oper.val.value
 
-        #print("match dict {}".format(self.match_dict))
+        # print("match dict {}".format(self.match_dict))
         if oper.val.tag in self.match_dict:
-            #   print("Appending")
+            # print("Appending")
             self.match_dict[tag].append(value)
         else:
             self.match_dict[tag] = [value]
@@ -94,7 +94,7 @@ class FilterTagged(Node): #produce operands in the form of TaggedValue, with the
     def match(self):
         match_d = self.match_dict
         tags = [tag for tag in match_d if len(match_d[tag]) == len(self.inport)]
-        #print("Receiving args {}".format(tags)
+        # print("Receiving args {}".format(tags)
         if len(tags) > 0:
             tag = tags[0]
         else:
@@ -110,7 +110,7 @@ class FilterTagged(Node): #produce operands in the form of TaggedValue, with the
     def run(self, args, workerid, operq):
         argvalues = [arg.value for arg in args]
         tag = args[0].tag
-        #print("Args {}".format(args))
+        # print("Args {}".format(args))
 
 
 
@@ -118,7 +118,7 @@ class FilterTagged(Node): #produce operands in the form of TaggedValue, with the
         if result != None:
             result = TaggedValue(result, tag)
         #else:
-        #    print("Creating just request {}".format(self.dsts))
+        # print("Creating just request {}".format(self.dsts))
         opers = self.create_oper(result, workerid, operq)
         self.sendops(opers, operq)
 
@@ -129,10 +129,10 @@ class Feeder(Node):
         self.dsts = []
         self.inport = []
         self.affinity = None
-        print("Setting feeder affinity")
+        # print("Setting feeder affinity")
 
     def f(self):
-        #print "Feeding %s" %self.value
+        # print "Feeding %s" %self.value
         return self.value
 
 
@@ -154,15 +154,15 @@ class Serializer(Node):
 
         for (arg, argbuffer) in map(None, args, self.arg_buffer):
             bisect.insort(argbuffer, arg.val)
-            #print "Argbuffer %s" %argbuffer
-        #print "Got operand with tag %s (expecting %d) %s Worker %d" %([arg.val for arg in args], self.next_tag, [arg.val for arg in argbuffer], workerid)
+            # print "Argbuffer %s" %argbuffer
+        # print "Got operand with tag %s (expecting %d) %s Worker %d" %([arg.val for arg in args], self.next_tag, [arg.val for arg in argbuffer], workerid)
         if args[0].val.tag == self.next_tag:
             next = self.next_tag
             argbuffer = self.arg_buffer
             buffertag = argbuffer[0][0].tag
             while buffertag == next:
                 args = [arg.pop(0) for arg in argbuffer]
-                print("Sending oper with tag {}".format(args[0].tag))	
+                # print("Sending oper with tag {}".format(args[0].tag))	
                 opers = self.create_oper(self.f([arg.value for arg in args]), workerid, operq)
                 self.sendops(opers, operq)
                 next += 1

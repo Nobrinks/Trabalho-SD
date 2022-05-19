@@ -17,21 +17,21 @@ class Worker(Process):
         self.conn = conn #connection with the scheduler to receive tasks
 
     #def sendops(self, opers):
-        #print "%s sending oper" %self.name
+        # print "%s sending oper" %self.name
     #	self.operq.put(opers)	
 
 
 
 
     def run(self):
-        print("I am worker {}".format(self.wid))
+        # print("I am worker {}".format(self.wid))
         self.operq.put([Oper(self.wid, None, None, None)]) #Request a task to start
 
         while True:
-            #print "Waiting for task %s" %self.name
+            # print "Waiting for task %s" %self.name
             task = self.conn.recv()
 
-            #print "Start working %s" %(self.name)
+            # print "Start working %s" %(self.name)
             node = self.graph.nodes[task.nodeid]
             node.run(task.args, self.wid, self.operq)
             #self.sendops(opermsg)
@@ -76,7 +76,7 @@ class Node:
 
 
     def run(self, args, workerid, operq):
-        #print "Running %s" %self
+        # print "Running %s" %self
         if len(self.inport) == 0:
             opers = self.create_oper(self.f(), workerid, operq)
         else:
@@ -95,11 +95,11 @@ class Node:
             for (dstid, dstport) in self.dsts:
                 oper = Oper(workerid, dstid, dstport, value)
                 opers.append(oper)
-                #print "Result produced %s (worker: %d)" %(oper.val, workerid)
+                # print "Result produced %s (worker: %d)" %(oper.val, workerid)
         return opers
 
     def insert_op(self, dstport, oper):
-        print("Received Oper {}".format(oper.val))
+        # print("Received Oper {}".format(oper.val))
         self.inport[dstport].append(oper)
     def match(self):
         args = []
@@ -112,7 +112,7 @@ class Node:
                 arg = inport[0]
                 inport.remove(arg)
             
-            print("Received args {}".format(args[0].val))
+            # print("Received args {}".format(args[0].val))
 
             return args
         else:
@@ -170,34 +170,34 @@ class Scheduler:
         self.keep_working = True
 
         if rank == 0:
-            print("I am the master. There are %s mpi processes. (hostname = %s)" %(self.mpi_size, MPI.Get_processor_name()))
+            # print("I am the master. There are %s mpi processes. (hostname = %s)" %(self.mpi_size, MPI.Get_processor_name()))
             self.pending_tasks = [0] * self.n_workers * self.mpi_size
             self.outqueue = Queue()
             def mpi_input(inqueue):
                 while self.keep_working:
                     msg = comm.recv(source = MPI.ANY_SOURCE, tag = MPI.ANY_TAG)
-                    #print "MPI Received opermsg from slave."
+                    # print "MPI Received opermsg from slave."
                     inqueue.put(msg)
 
             def mpi_output(outqueue):
                 while self.keep_working:
                     task = outqueue.get()
                     if task != None: #task == None means termination
-                        #print "MPI Sending task to slave node."
+                        # print "MPI Sending task to slave node."
                         dest = task.workerid // self.n_workers #destination mpi process
                         comm.send(task, dest = dest, tag = Scheduler.TASK_TAG)
                     else:
                         self.keep_working = False
                         mpi_terminate()
             def mpi_terminate():
-                print("MPI TERMINATING")
+                # print("MPI TERMINATING")
                 for i in range(0, self.mpi_size):
                     comm.send(None, dest = i, tag = Scheduler.TERMINATE_TAG)
 
             t_in = threading.Thread(target = mpi_input, args = (self.operq,))
             t_out = threading.Thread(target = mpi_output, args = (self.outqueue,))
         else:
-            print("I am a slave. (hostname = {})".format(MPI.Get_processor_name()))
+            # print("I am a slave. (hostname = {})".format(MPI.Get_processor_name()))
             #slave
             self.inqueue = Queue()
             for worker in self.workers:
@@ -209,10 +209,10 @@ class Scheduler:
                     task = comm.recv(source = 0, tag = MPI.ANY_TAG, status = status)
                     if status.Get_tag() == Scheduler.TERMINATE_TAG:
                         self.keep_working = False
-                        print("MPI received termination.")
+                        # print("MPI received termination.")
                         self.terminate_workers(self.workers)	
                     else:
-                        #print "MPI Sending task to worker in slave."
+                        # print "MPI Sending task to worker in slave."
                         workerid = task.workerid
                         connid = workerid % self.n_workers
                         self.conn[connid].send(task)
@@ -221,7 +221,7 @@ class Scheduler:
                 while self.keep_working:
                     msg = outqueue.get()
                     if msg != None:
-                        #print "MPI send opermsg to master."
+                        # print "MPI send opermsg to master."
                         comm.send(msg, dest = 0, tag = 0)
 
             t_in = threading.Thread(target = mpi_input, args = (self.inqueue,))
@@ -271,7 +271,7 @@ class Scheduler:
 
 
     def terminate_workers(self, workers):
-        print("Terminating workers {} {} {}".format(self.all_idle(self.workers), self.operq.qsize(), len(self.tasks)))
+        # print("Terminating workers {} {} {}".format(self.all_idle(self.workers), self.operq.qsize(), len(self.tasks)))
         if self.mpi_rank == 0:
             self.outqueue.put(None)
             for t in self.threads:
@@ -282,19 +282,19 @@ class Scheduler:
     def start(self):
         operq = self.operq
 
-        print("Roots {}".format([r for r in self.graph.nodes if len(r.inport) == 0]))
+        # print("Roots {}".format([r for r in self.graph.nodes if len(r.inport) == 0]))
         for root in [r for r in self.graph.nodes if len(r.inport) == 0]:
             task = Task(root.f, root.id)
             self.tasks += [task]
 
 
         for worker in self.workers:
-            print("Starting {}".format(worker.wid))
+            # print("Starting {}".format(worker.wid))
             worker.start()
 
         if self.mpi_rank == 0 or self.mpi_rank == None:
             #it this is the leader process or if mpi is not being used 
-            print("Main loop")
+            # print("Main loop")
             self.main_loop()
 
 
@@ -318,7 +318,7 @@ class Scheduler:
             while len(tasks) > 0 and len(self.waiting) > 0:
                 task = tasks.pop(0)
                 wid = self.check_affinity(task)
-                #print("Affinity is {} {}".format(task, wid))
+                # print("Affinity is {} {}".format(task, wid))
                 if wid != None:
                     if wid in self.waiting:
                         self.waiting.remove(wid)
@@ -326,7 +326,7 @@ class Scheduler:
                         self.pending_tasks[wid] += 1
                 else:
                     wid = self.waiting.pop(0)
-                #print "Got opermsg from worker %d" %wid
+                # print "Got opermsg from worker %d" %wid
                 if wid < self.n_workers: #local worker
                     worker = workers[wid]
 
@@ -335,7 +335,7 @@ class Scheduler:
                     task.workerid = wid
                     self.outqueue.put(task)
 
-        print("Waiting {}".format(self.waiting))		
+        # print("Waiting {}".format(self.waiting))		
         self.terminate_workers(self.workers)
 
 
